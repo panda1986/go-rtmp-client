@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/binary"
+	"fmt"
 )
 
 /*
@@ -96,17 +97,30 @@ func (v *ChunkStream) writeHeader(w *bufio.ReadWriter) error {
 		binary.Write(w, binary.LittleEndian, uint16(csid))
 	}
 
+	// write message header
 	ts := v.Timestamp
-	GetUnitBE(ts, 3)
 	if v.Format == 3 {
 		goto END
 	}
 
-	// write message header
-	if v.Timestamp > 0xffffff {
+	if ts > 0xffffff {
 		ts = 0xffffff
 	}
+	w.Write(GetUnitBE(ts, 3))
+	if v.Format == 2 {
+		goto END
+	}
+	if v.Length > 0xffffff {
+		return fmt.Errorf("length=%v, exceed 0xffffff", v.Length)
+	}
 
+	w.Write(GetUnitBE(v.Length, 3))
+	binary.Write(w, binary.BigEndian, uint(v.TypeID))
+	if v.Format == 1 {
+		goto END
+	}
+
+	binary.Write(w, binary.LittleEndian, v.StreamID)
 
 END:
 // Extended Timestamp
