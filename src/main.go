@@ -7,6 +7,7 @@ import (
 	"fmt"
 	neturl "net/url"
 	"strings"
+	"bufio"
 )
 
 func main()  {
@@ -47,5 +48,19 @@ func main()  {
 	log.Println(fmt.Sprintf("dial tcp from %v to %v success", localAddr.String(), remoteAddr.String()))
 	defer conn.Close()
 
+
+	size := 4 * 1024
+	rw := bufio.NewReadWriter(bufio.NewReaderSize(conn, size), bufio.NewWriterSize(conn, size))
 	// tcp handshake
+	if err := Handshake(rw); err != nil {
+		log.Println(fmt.Sprintf("do handshake failed, err is %v", err))
+		return
+	}
+
+	// command message
+	WriteConnect(rw)
+	// conn
+	// create stream
+	// play
+	// recv streams
 }
